@@ -62,6 +62,147 @@ struct BTNode {
     data.insert(data.begin() + i, keyToElevate);
     children.insert(children.begin() + i + 1, newChild);
   }
+
+  // REMOVE FUNCTION AND NEEDED TOOLS
+
+  void remove(int key) {
+    int idx = 0;
+    while (idx < data.size() && key > data[idx]->id) idx++;
+
+    // Case 1: The key to be removed is present in this node
+    if (idx < data.size() && data[idx]->id == key) {
+      if (isLeaf) {
+        // Case 1a: The node is a leaf, simply remove the key
+        data.erase(data.begin() + idx);
+      } else {
+        // Case 1b: The node is not a leaf
+        BTNode *pred = children[idx];
+        BTNode *succ = children[idx + 1];
+
+        // Case 1b-i: The predecessor child has at least treeOrder keys
+        if (pred->data.size() >= treeOrder + 1) {
+          StockItem *predItem = getPred(idx);
+          data[idx] = predItem;
+          children[idx]->remove(predItem->id);
+        }
+        // Case 1b-ii: The successor child has at least treeOrder keys
+        else if (succ->data.size() >= treeOrder + 1) {
+          StockItem *succItem = getSucc(idx);
+          data[idx] = succItem;
+          children[idx + 1]->remove(succItem->id);
+        }
+        // Case 1b-iii: Both predecessor and successor have less than treeOrder keys, merge them
+        else {
+          merge(idx);
+          children[idx]->remove(key);
+        }
+      }
+    } else {
+      // Case 2: The key to be removed is not present in this node
+      if (isLeaf) {
+        std::cout << "Key not found!" << std::endl;
+        return;
+      }
+
+      bool flag = (idx == data.size());
+
+      // Case 2a: The child where the key is supposed to exist has less than treeOrder keys
+      if (children[idx]->data.size() < treeOrder + 1) {
+        fill(idx);
+      }
+
+      // If the last child has been merged, it must have merged with the previous child
+      if (flag && idx > data.size()) {
+        children[idx - 1]->remove(key);
+      } else {
+        children[idx]->remove(key);
+      }
+    }
+  }
+
+  StockItem* getPred(int idx) {
+    BTNode *curr = children[idx];
+    while (!curr->isLeaf) {
+      curr = curr->children[curr->data.size()];
+    }
+    return curr->data[curr->data.size() - 1];
+  }
+
+  StockItem* getSucc(int idx) {
+    BTNode *curr = children[idx + 1];
+    while (!curr->isLeaf) {
+      curr = curr->children[0];
+    }
+    return curr->data[0];
+  }
+
+  void fill(int idx) {
+    // Borrow a key from the previous child
+    if (idx != 0 && children[idx - 1]->data.size() >= treeOrder + 1) {
+      borrowFromPrev(idx);
+    }
+    // Borrow a key from the next child
+    else if (idx != data.size() && children[idx + 1]->data.size() >= treeOrder + 1) {
+      borrowFromNext(idx);
+    }
+    // Merge with the previous or next child if borrowing is not possible
+    else {
+      if (idx != data.size()) {
+        merge(idx);
+      } else {
+        merge(idx - 1);
+      }
+    }
+  }
+
+  void borrowFromPrev(int idx) {
+    BTNode *child = children[idx];
+    BTNode *sibling = children[idx - 1];
+
+    child->data.insert(child->data.begin(), data[idx - 1]);
+    data[idx - 1] = sibling->data[sibling->data.size() - 1];
+    sibling->data.pop_back();
+
+    if (!child->isLeaf) {
+      child->children.insert(child->children.begin(), sibling->children[sibling->children.size() - 1]);
+      sibling->children.pop_back();
+    }
+  }
+
+  void borrowFromNext(int idx) {
+    BTNode *child = children[idx];
+    BTNode *sibling = children[idx + 1];
+
+    child->data.push_back(data[idx]);
+    data[idx] = sibling->data[0];
+    sibling->data.erase(sibling->data.begin());
+
+    if (!child->isLeaf) {
+      child->children.push_back(sibling->children[0]);
+      sibling->children.erase(sibling->children.begin());
+    }
+  }
+
+  void merge(int idx) {
+    BTNode *child = children[idx];
+    BTNode *sibling = children[idx + 1];
+
+    child->data.push_back(data[idx]);
+    for (int i = 0; i < sibling->data.size(); i++) {
+      child->data.push_back(sibling->data[i]);
+    }
+
+    if (!child->isLeaf) {
+      for (int i = 0; i < sibling->children.size(); i++) {
+        child->children.push_back(sibling->children[i]);
+      }
+    }
+
+    data.erase(data.begin() + idx);
+    children.erase(children.begin() + idx + 1);
+
+    delete sibling;
+  }
 };
 
 
@@ -127,9 +268,14 @@ int main() {
   root->children[1]->children[2]->data.push_back(new StockItem({85, "Item 85", 0}));
   root->children[1]->children[2]->data.push_back(new StockItem({90, "Item 90", 0}));
 
-  StockItem *result = root->search(50);
-  if (result != nullptr) std::cout << *result;
-  else std::cout << "Key not found!" << std::endl;
+  StockItem *result = root->search(52);
+  if (result != nullptr) std::cout << "Found: " << *result;
+  else std::cout << "Key 52 not found!" << std::endl;
+
+  root->remove(52);
+  result = root->search(52);
+  if (result != nullptr) std::cout << "Found: " << *result;
+  else std::cout << "Key 52 not found!" << std::endl;
 
   root->insert(new StockItem({7, "Item 7", 0}));
 
