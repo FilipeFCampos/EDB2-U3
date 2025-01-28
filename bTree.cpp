@@ -2,6 +2,8 @@
 #include <vector>
 #include <sstream>
 #include <ostream>
+#include <fstream>
+#include <string>
 
 #define treeOrder 2
 
@@ -205,83 +207,68 @@ struct BTNode {
   }
 };
 
+// Function to parse a line from the file and create a StockItem object
+StockItem* parseLine(const std::string& line) {
+    int id, quantity;
+    std::string name;
+    char discard;
 
+    std::istringstream iss(line);
+    iss >> discard >> id >> discard;
+    std::getline(iss, name, ','); // Read the name until the comma
+    iss >> quantity >> discard;
+
+    // Remove leading/trailing whitespace and quotes from the name
+    name.erase(0, name.find_first_not_of(' '));
+    name.erase(name.find_last_not_of(' ') + 1);
+    if (name.front() == '"' && name.back() == '"') {
+        name = name.substr(1, name.size() - 2);
+    }
+
+    return new StockItem{id, name, quantity};
+}
+
+// Function to read the file and populate the B-tree
+void populateTreeFromFile(BTNode* root, const std::string& filename) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open file " << filename << std::endl;
+        return;
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        StockItem* item = parseLine(line);
+        root->insert(item);
+    }
+
+    file.close();
+}
 
 int main() {
+    BTNode* root = new BTNode();
+    root->isLeaf = true; // Start with an empty tree
 
-  BTNode *root = new BTNode();
-  root->data.push_back(new StockItem({50, "Item 50", 0}));
-  root->isLeaf = false;
+    // Populate the B-tree from the file
+    populateTreeFromFile(root, "dadosB.txt");
 
-  root->children.push_back(new BTNode());
-  root->isLeaf = false;
-  root->children[0]->data.push_back(new StockItem({9, "Item 9", 0}));
-  root->children[0]->data.push_back(new StockItem({16, "Item 16", 0}));
-  root->children[0]->data.push_back(new StockItem({30, "Item 30", 0}));
-  root->children[0]->data.push_back(new StockItem({40, "Item 40", 0}));
+    // Test the B-tree by searching for an item
+    StockItem* result = root->search(118); // Search for Monitor
+    if (result != nullptr) {
+        std::cout << "Item found: " << *result;
+    } else {
+        std::cout << "Item not found!" << std::endl;
+    }
 
-  root->children[0]->children.push_back(new BTNode());
-  root->children[0]->children[0]->isLeaf = true;;
-  root->children[0]->children[0]->data.push_back(new StockItem({1, "Item 1", 0}));
-  root->children[0]->children[0]->data.push_back(new StockItem({2, "Item 2", 0}));
-  root->children[0]->children[0]->data.push_back(new StockItem({3, "Item 3", 0}));
-  root->children[0]->children[0]->data.push_back(new StockItem({4, "Item 4", 0}));
+    root -> remove(118);
+    std::cout << "Item 118 removed" << std::endl;
 
-  root->children[0]->children.push_back(new BTNode());
-  root->children[0]->children[1]->isLeaf = true;
-  root->children[0]->children[1]->data.push_back(new StockItem({12, "Item 12", 0}));
-  root->children[0]->children[1]->data.push_back(new StockItem({13, "Item 13", 0}));
+    result = root->search(118);
+    if (result != nullptr) {
+        std::cout << "Item found: " << *result;
+    } else {
+        std::cout << "Item not found!" << std::endl;
+    }
 
-  root->children[0]->children.push_back(new BTNode());
-  root->children[0]->children[2]->isLeaf = true;
-  root->children[0]->children[2]->data.push_back(new StockItem({20, "Item 20", 0}));
-  root->children[0]->children[2]->data.push_back(new StockItem({25, "Item 25", 0}));
-
-  root->children[0]->children.push_back(new BTNode());
-  root->children[0]->children[3]->isLeaf = true;
-  root->children[0]->children[3]->data.push_back(new StockItem({33, "Item 33", 0}));
-  root->children[0]->children[3]->data.push_back(new StockItem({38, "Item 38", 0}));
-
-  root->children[0]->children.push_back(new BTNode());
-  root->children[0]->children[4]->isLeaf = true;
-  root->children[0]->children[4]->data.push_back(new StockItem({43, "Item 43", 0}));
-  root->children[0]->children[4]->data.push_back(new StockItem({45, "Item 45", 0}));
-
-  root->children.push_back(new BTNode());
-  root->children[1]->isLeaf = false;
-  root->children[1]->data.push_back(new StockItem({60, "Item 60", 0}));
-  root->children[1]->data.push_back(new StockItem({80, "Item 80", 0}));
-
-  root->children[1]->children.push_back(new BTNode());
-  root->children[1]->children[0]->isLeaf = true;
-  root->children[1]->children[0]->data.push_back(new StockItem({52, "Item 52", 0}));
-  root->children[1]->children[0]->data.push_back(new StockItem({56, "Item 56", 0}));
-  root->children[1]->children[0]->data.push_back(new StockItem({58, "Item 58", 0}));
-
-  root->children[1]->children.push_back(new BTNode());
-  root->children[1]->children[1]->isLeaf = true;
-  root->children[1]->children[1]->data.push_back(new StockItem({65, "Item 65", 0}));
-  root->children[1]->children[1]->data.push_back(new StockItem({70, "Item 70", 0}));
-
-  root->children[1]->children.push_back(new BTNode());
-  root->children[1]->children[2]->isLeaf = true;
-  root->children[1]->children[2]->data.push_back(new StockItem({85, "Item 85", 0}));
-  root->children[1]->children[2]->data.push_back(new StockItem({90, "Item 90", 0}));
-
-  StockItem *result = root->search(52);
-  if (result != nullptr) std::cout << "Found: " << *result;
-  else std::cout << "Key 52 not found!" << std::endl;
-
-  root->remove(52);
-  result = root->search(52);
-  if (result != nullptr) std::cout << "Found: " << *result;
-  else std::cout << "Key 52 not found!" << std::endl;
-
-  root->insert(new StockItem({7, "Item 7", 0}));
-
-  result = root->search(7);
-  if (result != nullptr) std::cout << *result;
-  else std::cout << "Key not found!" << std::endl;
-
-  return 0;
+    return 0;
 }
