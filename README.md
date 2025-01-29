@@ -6,3 +6,4 @@ Trabalho da unidade 3 de Estrutura de Dados Básicas 2 - Bacharelado em Tecnolog
 
 ## Grupo:
 - Filipe Fernandes Campos: Fluxograma da exclusão da árvore b
+- Breno Jalmir de Medeiros Almeida: Implementação da busca e inserção
