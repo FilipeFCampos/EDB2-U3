@@ -270,7 +270,7 @@ int main() {
         std::cout << "Item not found!" << std::endl;
     }
 
-    // root->insert(new StockItem({7, "Grampeador", 0}));
+    // root->insert(new StockItem({7, "Grampeador", 10}));
 
     // result = root->search(7);
     // if (result != nullptr) std::cout << *result;
